@@ -40,21 +40,9 @@ export function useKeystrokeCapture(
   }, []);
 
   const getCursorPosition = useCallback((element: HTMLElement): number => {
-    if (!element) return 0;
-    
-    try {
-      const selection = window.getSelection();
-      if (!selection || selection.rangeCount === 0) return 0;
-      
-      const range = selection.getRangeAt(0);
-      const preCaretRange = range.cloneRange();
-      preCaretRange.selectNodeContents(element);
-      preCaretRange.setEnd(range.endContainer, range.endOffset);
-      
-      return preCaretRange.toString().length;
-    } catch (error) {
-      return 0;
-    }
+    // Skip cursor position calculation for performance
+    // Can be re-enabled if needed for specific features
+    return 0;
   }, []);
 
   const isSpecialKey = useCallback((key: string): boolean => {
@@ -86,8 +74,11 @@ export function useKeystrokeCapture(
   }, [generateEventId, getCursorPosition, isSpecialKey]);
 
   const addEvent = useCallback((event: KeystrokeEvent) => {
-    setEvents(prev => [...prev, event]);
-    setLastEvent(event);
+    // Use requestAnimationFrame to defer state updates
+    requestAnimationFrame(() => {
+      setEvents(prev => [...prev, event]);
+      setLastEvent(event);
+    });
     
     // Add to batch
     batchRef.current.push(event);
@@ -145,16 +136,10 @@ export function useKeystrokeCapture(
   }, [enabled, targetRef, createKeystrokeEvent, addEvent]);
 
   const handleKeyUp = useCallback((e: KeyboardEvent) => {
-    if (!enabled || !targetRef.current) return;
-
-    // Only capture keyup for special tracking if needed
-    // Most implementations focus on keydown and input events
-    if (['Backspace', 'Delete', 'Enter'].includes(e.key)) {
-      const element = targetRef.current;
-      const keystrokeEvent = createKeystrokeEvent('keyup', e.key, element);
-      addEvent(keystrokeEvent);
-    }
-  }, [enabled, targetRef, createKeystrokeEvent, addEvent]);
+    // Skip keyup events to reduce processing overhead
+    // We capture everything we need in keydown and input events
+    return;
+  }, []);
 
   const handleInput = useCallback((e: InputEvent) => {
     if (!enabled || !targetRef.current) return;
@@ -162,8 +147,9 @@ export function useKeystrokeCapture(
     const element = targetRef.current;
     const inputData = e.data || '';
     
-    // Only capture actual character input
-    if (inputData && e.inputType === 'insertText') {
+    // Skip input events that duplicate keydown events
+    // Only capture composition and special input types
+    if (inputData && e.inputType === 'insertCompositionText') {
       const keystrokeEvent = createKeystrokeEvent('input', inputData, element);
       addEvent(keystrokeEvent);
     }

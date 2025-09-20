@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ToastProvider } from './components/ui/ToastManager';
 import { RegisterForm } from './components/auth/RegisterForm';
 import { LoginForm } from './components/auth/LoginForm';
 import { Editor } from './components/editor/Editor';
@@ -11,6 +12,7 @@ function MainContent() {
   const [loading, setLoading] = useState(true);
   const [showAuthForm, setShowAuthForm] = useState<'login' | 'register' | null>(null);
   const [showKeystrokeDebugger, setShowKeystrokeDebugger] = useState(false);
+  const [showSecurityStats, setShowSecurityStats] = useState(false);
 
   // Handle hash-based navigation for auth forms
   useEffect(() => {
@@ -109,6 +111,16 @@ function MainContent() {
                   {showKeystrokeDebugger ? '🐛 Hide Debug' : '🐛 Show Debug'}
                 </button>
                 <button
+                  onClick={() => setShowSecurityStats(!showSecurityStats)}
+                  className={`px-3 py-1 rounded text-sm transition-colors ${
+                    showSecurityStats 
+                      ? 'bg-red-100 text-red-700 hover:bg-red-200' 
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {showSecurityStats ? '🛡️ Hide Security' : '🛡️ Show Security'}
+                </button>
+                <button
                   onClick={logout}
                   className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
                 >
@@ -142,6 +154,7 @@ function MainContent() {
                   console.log('Keystroke batch received:', batch);
                 }}
                 showKeystrokeDebugger={showKeystrokeDebugger}
+                showSecurityStats={showSecurityStats}
               />
             </div>
           </div>
@@ -245,9 +258,11 @@ function MainContent() {
 
 function App() {
   return (
-    <AuthProvider>
-      <MainContent />
-    </AuthProvider>
+    <ToastProvider>
+      <AuthProvider>
+        <MainContent />
+      </AuthProvider>
+    </ToastProvider>
   );
 }
 

@@ -33,7 +33,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
       ...options,
     });
 
-    const data = await response.json();
+    // Check if response has content before parsing
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      console.error('Response is not JSON:', response.status, response.statusText);
+      throw new Error(`Server returned non-JSON response: ${response.status} ${response.statusText}`);
+    }
+
+    // Check for empty response
+    const text = await response.text();
+    if (!text) {
+      console.error('Empty response from server');
+      throw new Error('Server returned empty response');
+    }
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error('Failed to parse JSON:', text);
+      throw new Error('Invalid JSON response from server');
+    }
 
     if (!response.ok) {
       throw new Error(data.error || 'Request failed');

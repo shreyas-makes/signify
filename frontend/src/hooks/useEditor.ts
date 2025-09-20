@@ -15,7 +15,7 @@ export interface UseEditorOptions {
 }
 
 export function useEditor(options: UseEditorOptions = {}) {
-  const { debounceMs = 300, placeholder = "Start writing your human-verified content..." } = options;
+  const { debounceMs = 50, placeholder = "Start writing your human-verified content..." } = options;
   
   const [state, setState] = useState<EditorState>({
     content: '',

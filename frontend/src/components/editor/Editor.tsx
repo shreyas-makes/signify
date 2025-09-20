@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useEditor } from '../../hooks/useEditor';
 import { useKeystrokeCapture } from '../../hooks/useKeystrokeCapture';
+import { usePastePrevention } from '../../hooks/usePastePrevention';
 import { EditorStats } from './EditorStats';
 import { KeystrokeDebugger } from './KeystrokeDebugger';
 import { KeystrokeEvent, KeystrokeBatch } from '@shared/types';
@@ -13,6 +14,7 @@ interface EditorProps {
   placeholder?: string;
   className?: string;
   showKeystrokeDebugger?: boolean;
+  showSecurityStats?: boolean;
 }
 
 export function Editor({ 
@@ -22,7 +24,8 @@ export function Editor({
   initialContent = '', 
   placeholder,
   className = '',
-  showKeystrokeDebugger = false
+  showKeystrokeDebugger = false,
+  showSecurityStats = false
 }: EditorProps) {
   const {
     state,
@@ -70,6 +73,17 @@ export function Editor({
     }
   });
 
+  // Set up comprehensive paste prevention
+  const {
+    getSecurityStats
+  } = usePastePrevention(editorRef, {
+    onSecurityEvent: (event) => {
+      console.warn('Security event blocked:', event);
+    },
+    bulkInsertionThreshold: 50, // 50 chars per second (allows fast typing up to ~600 WPM)
+    enableLogging: true
+  });
+
   const displayPlaceholder = placeholder || defaultPlaceholder;
 
   // Set initial content
@@ -111,26 +125,6 @@ export function Editor({
     handleKeyDown(event.nativeEvent);
   };
 
-  const handlePaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
-    // Prevent paste to maintain keystroke integrity
-    event.preventDefault();
-    
-    // Show a brief message to the user
-    const messageEl = document.createElement('div');
-    messageEl.textContent = 'Paste disabled - type manually to verify human authorship';
-    messageEl.className = 'fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded shadow-lg z-50';
-    document.body.appendChild(messageEl);
-    
-    setTimeout(() => {
-      document.body.removeChild(messageEl);
-    }, 3000);
-  };
-
-  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
-    // Prevent drop to maintain keystroke integrity
-    event.preventDefault();
-  };
-
   return (
     <div className={`w-full ${className}`}>
       {/* Formatting Toolbar */}
@@ -168,8 +162,6 @@ export function Editor({
           suppressContentEditableWarning
           onInput={handleInput}
           onKeyDown={handleKeyDownEvent}
-          onPaste={handlePaste}
-          onDrop={handleDrop}
           className={`
             editor-content
             w-full min-h-[400px] px-4 py-6 
@@ -230,6 +222,33 @@ export function Editor({
           </div>
         </div>
       </div>
+
+      {/* Security Statistics */}
+      {showSecurityStats && (
+        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-start gap-2">
+            <div className="flex-shrink-0 mt-0.5">
+              <div className="w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                <span className="text-white text-xs">🛡️</span>
+              </div>
+            </div>
+            <div className="text-sm text-red-800">
+              <strong>Security Events Blocked:</strong>
+              {(() => {
+                const stats = getSecurityStats();
+                return (
+                  <div className="mt-1 text-xs space-y-1">
+                    <div>Total attempts: {stats.totalAttempts}</div>
+                    <div>Paste attempts: {stats.pasteAttempts}</div>
+                    <div>Drop attempts: {stats.dropAttempts}</div>
+                    <div>Bulk insertion attempts: {stats.bulkInsertionAttempts}</div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Keystroke Debugger */}
       {showKeystrokeDebugger && (
