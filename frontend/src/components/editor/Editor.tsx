@@ -1,19 +1,28 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useEditor } from '../../hooks/useEditor';
+import { useKeystrokeCapture } from '../../hooks/useKeystrokeCapture';
 import { EditorStats } from './EditorStats';
+import { KeystrokeDebugger } from './KeystrokeDebugger';
+import { KeystrokeEvent, KeystrokeBatch } from '@shared/types';
 
 interface EditorProps {
   onContentChange?: (content: string, htmlContent: string) => void;
+  onKeystrokeCapture?: (events: KeystrokeEvent[]) => void;
+  onKeystrokeBatch?: (batch: KeystrokeBatch) => void;
   initialContent?: string;
   placeholder?: string;
   className?: string;
+  showKeystrokeDebugger?: boolean;
 }
 
 export function Editor({ 
   onContentChange, 
+  onKeystrokeCapture,
+  onKeystrokeBatch,
   initialContent = '', 
   placeholder,
-  className = '' 
+  className = '',
+  showKeystrokeDebugger = false
 }: EditorProps) {
   const {
     state,
@@ -25,6 +34,41 @@ export function Editor({
     formatText,
     placeholder: defaultPlaceholder,
   } = useEditor({ placeholder });
+
+  const [performanceMetrics, setPerformanceMetrics] = useState<{
+    totalEvents: number;
+    avgLatency: number;
+    lastBatchSize: number;
+  }>({ totalEvents: 0, avgLatency: 0, lastBatchSize: 0 });
+
+  // Set up keystroke capture
+  const {
+    events: keystrokeEvents,
+    isCapturing,
+    lastEvent,
+    eventCount
+  } = useKeystrokeCapture(editorRef, {
+    enabled: true,
+    batchInterval: 100,
+    onBatch: (batch) => {
+      if (onKeystrokeBatch) {
+        onKeystrokeBatch(batch);
+      }
+      
+      // Update performance metrics
+      setPerformanceMetrics(prev => ({
+        totalEvents: prev.totalEvents + batch.events.length,
+        avgLatency: batch.events.length > 0 ? 
+          batch.events.reduce((sum, event) => sum + (batch.batchTimestamp - event.timestamp), 0) / batch.events.length :
+          prev.avgLatency,
+        lastBatchSize: batch.events.length
+      }));
+    },
+    onEvent: (event) => {
+      // Individual event callback for real-time processing if needed
+      console.debug('Keystroke event:', event);
+    }
+  });
 
   const displayPlaceholder = placeholder || defaultPlaceholder;
 
@@ -50,6 +94,13 @@ export function Editor({
       onContentChange(state.content, state.htmlContent);
     }
   }, [state.content, state.htmlContent, onContentChange]);
+
+  // Call keystroke capture callback when events change
+  useEffect(() => {
+    if (onKeystrokeCapture && keystrokeEvents.length > 0) {
+      onKeystrokeCapture(keystrokeEvents);
+    }
+  }, [keystrokeEvents, onKeystrokeCapture]);
 
   // Handle input events
   const handleInput = () => {
@@ -171,9 +222,26 @@ export function Editor({
           <div className="text-sm text-blue-800">
             <strong>Human Verification Active:</strong> Copy/paste is disabled to ensure 100% manual typing. 
             Every keystroke is recorded with timestamps for verification.
+            {isCapturing && (
+              <div className="mt-1 text-xs">
+                Captured {eventCount} keystrokes • Avg latency: {performanceMetrics.avgLatency.toFixed(2)}ms
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Keystroke Debugger */}
+      {showKeystrokeDebugger && (
+        <div className="mt-4">
+          <KeystrokeDebugger
+            events={keystrokeEvents}
+            isCapturing={isCapturing}
+            lastEvent={lastEvent}
+            eventCount={eventCount}
+          />
+        </div>
+      )}
     </div>
   );
 }

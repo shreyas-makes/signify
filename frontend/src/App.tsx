@@ -3,12 +3,14 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { RegisterForm } from './components/auth/RegisterForm';
 import { LoginForm } from './components/auth/LoginForm';
 import { Editor } from './components/editor/Editor';
+import { KeystrokeBatch } from '@shared/types';
 
 function MainContent() {
   const { user, logout } = useAuth();
   const [health, setHealth] = useState<{ status: string; timestamp: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAuthForm, setShowAuthForm] = useState<'login' | 'register' | null>(null);
+  const [showKeystrokeDebugger, setShowKeystrokeDebugger] = useState(false);
 
   // Handle hash-based navigation for auth forms
   useEffect(() => {
@@ -97,6 +99,16 @@ function MainContent() {
               <div className="flex items-center gap-4">
                 <span className="text-gray-600">Welcome, {user.display_name}</span>
                 <button
+                  onClick={() => setShowKeystrokeDebugger(!showKeystrokeDebugger)}
+                  className={`px-3 py-1 rounded text-sm transition-colors ${
+                    showKeystrokeDebugger 
+                      ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {showKeystrokeDebugger ? '🐛 Hide Debug' : '🐛 Show Debug'}
+                </button>
+                <button
                   onClick={logout}
                   className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
                 >
@@ -123,6 +135,13 @@ function MainContent() {
                   // TODO: Save draft with keystroke data in Step 4
                   console.log('Content changed:', { content, htmlContent });
                 }}
+                onKeystrokeCapture={(events) => {
+                  console.log('Keystroke events updated:', events.length);
+                }}
+                onKeystrokeBatch={(batch: KeystrokeBatch) => {
+                  console.log('Keystroke batch received:', batch);
+                }}
+                showKeystrokeDebugger={showKeystrokeDebugger}
               />
             </div>
           </div>

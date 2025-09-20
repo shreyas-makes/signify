@@ -17,11 +17,22 @@ export interface Post {
 }
 
 export interface KeystrokeEvent {
+  id: string;
+  timestamp: number; // performance.now()
+  character: string;
+  eventType: 'keydown' | 'keyup' | 'input' | 'delete' | 'backspace';
+  cursorPosition: number;
+  isSpecialKey: boolean;
+}
+
+export interface DatabaseKeystrokeEvent {
   id: number;
   post_id: number;
   timestamp: number;
   character: string | null;
-  event_type: 'keydown' | 'keyup' | 'input' | 'delete';
+  event_type: 'keydown' | 'keyup' | 'input' | 'delete' | 'backspace';
+  cursor_position: number;
+  is_special_key: boolean;
   created_at: string;
 }
 
@@ -44,7 +55,7 @@ export interface AuthResponse {
 export interface CreatePostRequest {
   title: string;
   content: string;
-  keystroke_events: Omit<KeystrokeEvent, 'id' | 'post_id' | 'created_at'>[];
+  keystroke_events: Omit<DatabaseKeystrokeEvent, 'id' | 'post_id' | 'created_at'>[];
 }
 
 export interface PublishPostRequest {
@@ -53,7 +64,7 @@ export interface PublishPostRequest {
 }
 
 export interface PostWithKeystrokes extends Post {
-  keystroke_events: KeystrokeEvent[];
+  keystroke_events: DatabaseKeystrokeEvent[];
   user: Pick<User, 'display_name'>;
 }
 
@@ -73,5 +84,12 @@ export interface HealthCheckResponse {
 export interface KeystrokeEventInput {
   timestamp: number;
   character: string | null;
-  event_type: 'keydown' | 'keyup' | 'input' | 'delete';
+  event_type: 'keydown' | 'keyup' | 'input' | 'delete' | 'backspace';
+  cursor_position: number;
+  is_special_key: boolean;
+}
+
+export interface KeystrokeBatch {
+  events: KeystrokeEvent[];
+  batchTimestamp: number;
 }
