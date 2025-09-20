@@ -41,5 +41,6 @@ export async function closeDatabase() {
   console.log('Database connection closed');
 }
 
-process.on('SIGINT', closeDatabase);
-process.on('SIGTERM', closeDatabase);
+// Remove automatic cleanup - let the application handle shutdown gracefully
+// process.on('SIGINT', closeDatabase);
+// process.on('SIGTERM', closeDatabase);

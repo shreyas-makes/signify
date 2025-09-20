@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { RegisterForm } from './components/auth/RegisterForm';
 import { LoginForm } from './components/auth/LoginForm';
+import { Editor } from './components/editor/Editor';
 
 function MainContent() {
   const { user, logout } = useAuth();
@@ -84,6 +85,53 @@ function MainContent() {
     );
   }
 
+  // If user is logged in, show the editor
+  if (user) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex justify-between items-center">
+              <h1 className="text-2xl font-bold text-gray-900">Signify</h1>
+              <div className="flex items-center gap-4">
+                <span className="text-gray-600">Welcome, {user.display_name}</span>
+                <button
+                  onClick={logout}
+                  className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Editor Interface */}
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white rounded-lg shadow-lg p-8">
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">Write Your Human-Verified Content</h2>
+                <p className="text-gray-600">
+                  Start typing to create content with keystroke verification. Copy/paste is disabled to ensure 100% human authorship.
+                </p>
+              </div>
+              
+              <Editor 
+                onContentChange={(content, htmlContent) => {
+                  // TODO: Save draft with keystroke data in Step 4
+                  console.log('Content changed:', { content, htmlContent });
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Landing page for non-authenticated users
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-16">
@@ -93,38 +141,26 @@ function MainContent() {
               Signify
             </h1>
             
-            {user ? (
-              <div className="flex items-center gap-4">
-                <span className="text-gray-600">Welcome, {user.display_name}</span>
-                <button
-                  onClick={logout}
-                  className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
-                >
-                  Logout
-                </button>
-              </div>
-            ) : (
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowAuthForm('login');
-                    window.location.hash = 'login';
-                  }}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                >
-                  Sign In
-                </button>
-                <button
-                  onClick={() => {
-                    setShowAuthForm('register');
-                    window.location.hash = 'register';
-                  }}
-                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
-                >
-                  Register
-                </button>
-              </div>
-            )}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowAuthForm('login');
+                  window.location.hash = 'login';
+                }}
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => {
+                  setShowAuthForm('register');
+                  window.location.hash = 'register';
+                }}
+                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
+              >
+                Register
+              </button>
+            </div>
           </div>
           
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">

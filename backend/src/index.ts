@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
-import { serve } from '@hono/node-server';
+// Using Bun's native server instead of @hono/node-server
 import { initializeDatabase } from './db/index.js';
 import authRoutes from './routes/auth.js';
 
@@ -55,9 +55,11 @@ async function startServer() {
     await initializeDatabase();
     
     console.log(`🚀 Server starting on port ${port}`);
-    serve({
-      fetch: app.fetch,
+    
+    // Use Bun's native server
+    Bun.serve({
       port,
+      fetch: app.fetch,
     });
     
     console.log(`✅ Server running at http://localhost:${port}`);
