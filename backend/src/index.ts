@@ -4,6 +4,7 @@ import { logger } from 'hono/logger';
 // Using Bun's native server instead of @hono/node-server
 import { initializeDatabase } from './db/index.js';
 import authRoutes from './routes/auth.js';
+import draftRoutes from './routes/drafts.js';
 
 const app = new Hono();
 
@@ -18,6 +19,9 @@ app.use('*', cors({
 
 // Mount auth routes
 app.route('/auth', authRoutes);
+
+// Mount draft routes
+app.route('/api/posts', draftRoutes);
 
 app.get('/health', (c) => {
   return c.json({ 
@@ -45,7 +49,12 @@ app.notFound((c) => {
 
 app.onError((err, c) => {
   console.error('Server error:', err);
-  return c.json({ error: 'Internal Server Error' }, 500);
+  // Ensure we always return JSON even on errors
+  return c.json({ 
+    success: false,
+    error: err instanceof Error ? err.message : 'Internal Server Error',
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  }, 500);
 });
 
 const port = parseInt(process.env.PORT || '3001');

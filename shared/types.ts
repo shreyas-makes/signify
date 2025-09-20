@@ -93,3 +93,41 @@ export interface KeystrokeBatch {
   events: KeystrokeEvent[];
   batchTimestamp: number;
 }
+
+export interface Draft {
+  id: string;
+  user_id: number;
+  title: string | null;
+  content: string;
+  word_count: number;
+  last_saved_at: string;
+  created_at: string;
+}
+
+export interface DraftKeystrokeEvent {
+  id: number;
+  draft_id: string;
+  timestamp: number;
+  character: string | null;
+  event_type: 'keydown' | 'keyup' | 'input' | 'delete' | 'backspace';
+  created_at: string;
+}
+
+export interface SaveDraftRequest {
+  title?: string;
+  content: string;
+  keystrokes: Omit<DraftKeystrokeEvent, 'id' | 'draft_id' | 'created_at'>[];
+  draftId?: string;
+}
+
+export interface SaveDraftResponse {
+  draftId: string;
+  savedAt: string;
+  wordCount: number;
+}
+
+export interface SaveStatus {
+  state: 'idle' | 'saving' | 'saved' | 'error';
+  lastSaved?: Date;
+  error?: string;
+}
